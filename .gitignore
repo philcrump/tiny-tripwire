@@ -1,0 +1,6 @@
+*~
+*.swp
+*.d
+*.o
+ttw
+config.json
