@@ -1,4 +1,4 @@
-# Tiny Tripwire
+# Tiny Tripwire ![Compile](https://github.com/philcrump/tiny-tripwire/workflows/main.yml/badge.svg)
 
 <p float="left">
   <img src="/logo-Lorc_Delapoite_contributors.png" width="25%" />
