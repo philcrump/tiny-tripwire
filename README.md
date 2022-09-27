@@ -58,3 +58,5 @@ eg.
 MIT licensed. © Phil Crump - phil@philcrump.co.uk
 
 Derivations from other works are acknowledged in the source.
+
+Logo © Lorc, Delapoite, & Contributors
