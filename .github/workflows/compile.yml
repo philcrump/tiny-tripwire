@@ -1,0 +1,22 @@
+name: compile
+
+on: [push, pull_request]
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    name: Compile
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Install Dependencies
+        run: apt install build-essential libpcap-dev libcurl4-openssl-dev libjson-c-dev
+
+      - name: Compile
+        run: make
