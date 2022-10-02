@@ -99,8 +99,14 @@ bool load_config(char *config_filename, config_t *config_ptr)
     config_obj_ptr = json_object_object_get(config_email_obj, "port");
     config_ptr->smtp_server_port = json_object_get_int(config_obj_ptr);
 
+    config_obj_ptr = json_object_object_get(config_email_obj, "usessl");
+    config_ptr->smtp_server_usessl = json_object_get_boolean(config_obj_ptr);
+
     config_obj_ptr = json_object_object_get(config_email_obj, "usetls");
     config_ptr->smtp_server_usetls = json_object_get_boolean(config_obj_ptr);
+
+    config_obj_ptr = json_object_object_get(config_email_obj, "useauth");
+    config_ptr->smtp_server_useauth = json_object_get_boolean(config_obj_ptr);
 
     config_obj_ptr = json_object_object_get(config_email_obj, "username");
     config_ptr->smtp_server_username = strdup(json_object_get_string(config_obj_ptr));

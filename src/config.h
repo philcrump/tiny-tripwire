@@ -17,10 +17,12 @@ typedef struct {
   char *notification_email_subject;
 
   bool smtp_enabled;
+  bool smtp_server_usessl;
   bool smtp_server_usetls;
   bool smtp_server_verifyca;
   char *smtp_server_hostname;
   int smtp_server_port;
+  bool smtp_server_useauth;
   char *smtp_server_username;
   char *smtp_server_password;
 } config_t;

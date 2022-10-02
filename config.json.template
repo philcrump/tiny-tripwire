@@ -11,10 +11,12 @@
 		"email_subject": "Tiny-Tripwire Incident Report"
 	},
 	"smtp": {
-		"hostname": "smtp.mailgun.org",
+		"hostname": "smtp.servers.org",
+		"usessl": true,
 		"usetls": false,
 		"verifyca": false,
 		"port": 465,
+		"useauth": true,
 		"username": "tripwire@abc.co.uk",
 		"password": "not-a-real-password"
 	}

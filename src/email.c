@@ -103,7 +103,7 @@ bool email(config_t *config_ptr, email_t *email_ptr)
 
   if(asprintf(&email_server_connection_string,
       "%s://%s:%d",
-      config_ptr->smtp_server_usetls ? "smtp" : "smtps",
+      config_ptr->smtp_server_usessl ? "smtps" : "smtp",
       config_ptr->smtp_server_hostname,
       config_ptr->smtp_server_port
     ) < 0
@@ -117,8 +117,11 @@ bool email(config_t *config_ptr, email_t *email_ptr)
   {
     curl_easy_setopt(curl, CURLOPT_URL, email_server_connection_string);
 
-    curl_easy_setopt(curl, CURLOPT_USERNAME, config_ptr->smtp_server_username);
-    curl_easy_setopt(curl, CURLOPT_PASSWORD, config_ptr->smtp_server_password);
+    if(config_ptr->smtp_server_useauth)
+    {
+      curl_easy_setopt(curl, CURLOPT_USERNAME, config_ptr->smtp_server_username);
+      curl_easy_setopt(curl, CURLOPT_PASSWORD, config_ptr->smtp_server_password);
+    }
  
     if(config_ptr->smtp_server_usetls)
     {
