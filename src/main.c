@@ -166,7 +166,7 @@ static inline char *generate_ports_filter_string(config_t *config_ptr)
       }
 
       /* Allocate space for new port */
-      filter_string = realloc(filter_string, filter_string_length + strlen(port_string) + 4);
+      filter_string = realloc(filter_string, filter_string_length + strlen(port_string) + 4 + 1);
 
       sprintf(&filter_string[filter_string_length], "%s or ", port_string);
       filter_string_length += strlen(port_string) + 4;
@@ -643,6 +643,9 @@ int main(int argc, char *argv[])
 
   pcap_freecode(&capture_filter);
   pcap_close(capture_pcap_ptr);
+
+  free(ports_filter_string);
+  free(config_filename);
 
   return 0;
 }
