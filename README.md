@@ -6,6 +6,12 @@
 
 A minimal IDS. Uses libpcap to monitor an interface on specific ports, all events are logged and will trigger an email notification with a summary of all events after a configurable latency.
 
+## Notable missing features
+
+- [ ] IPv6 Support
+- [ ] Non-root user ability (or at self-demoting after libpcap setup)
+- [ ] Support for the "any" Interface
+
 ## Dependencies
 
 ### Ubuntu 20.04+
@@ -28,7 +34,8 @@ eg.
 	"listen": {
 		"interface": "enp0s31f6",
 		"icmp": true,
-		"ports": [ 21, 22, 80, 443 ]
+		"ports": [ 21, 22, 80, 443 ],
+		"ignore_local_source": true
 	},
 	"notification": {
 		"latency_seconds": 60,
@@ -38,9 +45,11 @@ eg.
 	},
 	"smtp": {
 		"hostname": "smtp.mailgun.org",
+		"usessl": true,
 		"usetls": false,
 		"verifyca": false,
 		"port": 465,
+		"useauth": true,
 		"username": "tripwire@abc.co.uk",
 		"password": "not-a-real-password"
 	}
