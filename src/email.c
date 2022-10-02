@@ -88,6 +88,9 @@ bool email(config_t *config_ptr, email_t *email_ptr)
     "To: <%s>\r\n"
     "From: <%s>\r\n"
     "Subject: %s\r\n"
+    "Content-Type: text/plain\r\n"
+    "X-Priority: 1 (Highest)\r\n"
+    "X-MSMail-Priority: High\r\n"
     "\r\n"
     "%s\r\n",
     email_ptr->to,
