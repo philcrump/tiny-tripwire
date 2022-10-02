@@ -2,7 +2,8 @@
 	"listen": {
 		"interface": "enp0s31f6",
 		"icmp": true,
-		"ports": [ 21, 22, 80, 443 ]
+		"ports": [ 21, 22, 80, 443 ],
+		"ignore_local_source": true
 	},
 	"notification": {
 		"latency_seconds": 60,

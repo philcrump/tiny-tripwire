@@ -318,6 +318,18 @@ static void process_packet(u_char *args, const struct pcap_pkthdr *header, const
     return;
   }
 
+  if(app_data.config.listen_ignore_local_source)
+  {
+    for(int32_t i = 0; i < app_data.interface_v4_addresses_count; i++)
+    {
+      if(0 == memcmp(&ip->ip_src, &(app_data.interface_v4_addresses[i]), sizeof(struct in_addr)))
+      {
+        return;
+      }
+    }
+    /* IPv6 not yet supported */
+  }
+
   incident_entry_t *incident_entry_ptr;
 
   if(app_data.incident.active == false)

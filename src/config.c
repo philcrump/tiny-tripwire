@@ -64,6 +64,9 @@ bool load_config(char *config_filename, config_t *config_ptr)
     }
     /* '0' terminator */
     config_ptr->listen_ports[CONFIG_LISTEN_PORTS_MAXCOUNT] = 0;
+
+    config_obj_ptr = json_object_object_get(config_listen_obj, "ignore_local_source");
+    config_ptr->listen_ignore_local_source = json_object_get_boolean(config_obj_ptr);
   }
   else
   {
