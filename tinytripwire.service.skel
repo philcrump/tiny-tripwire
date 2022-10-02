@@ -1,0 +1,15 @@
+[Unit]
+Description=Tiny Tripwire IDS
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/bin/stdbuf -oL -eL {{directory}}/ttw -c config.json
+WorkingDirectory={{directory}}
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

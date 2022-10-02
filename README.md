@@ -53,6 +53,14 @@ eg.
 ./ttw -c <config filename>
 ```
 
+### Install systemd service
+
+```bash
+sudo ./install
+```
+
+Service will now be running and enabled at boot, view log output with `sudo journalctl -f -u tinytripwire.service`
+
 ## Copyright
 
 MIT licensed. © Phil Crump - phil@philcrump.co.uk

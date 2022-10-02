@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+source_dir="$(cd $(dirname "${BASH_SOURCE[0]}") && pwd)";
+cd "$source_dir";
+
+if [[ $(id -u) -ne 0 ]];
+then
+    echo "Error: Script must be run as superuser!";
+    exit;
+fi
+
+service="tinytripwire";
+
+echo "Installing/updating service ${service} ..";
+
+skel="${service}.service.skel";
+temp="${service}.service";
+sed "s#{{directory}}#${source_dir}#g" < $skel > $temp;
+mv -f $temp /etc/systemd/system/;
+systemctl daemon-reload;
+
+echo "Enabling at boot..";
+systemctl enable "$service";
+
+echo "Starting service.."
+systemctl restart "$service";
+
+echo "Install Complete!";
