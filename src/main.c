@@ -24,6 +24,13 @@
 static app_data_t app_data = {
   .exit_requested = false,
 
+  .interface_v4_addresses = NULL,
+  .interface_v4_addresses_count = 0,
+  .interface_v6_addresses = NULL,
+  .interface_v6_addresses_count = 0,
+
+  .interface_addresses_string = NULL,
+
   .incident = {
     .lock = PTHREAD_MUTEX_INITIALIZER,
     .active = false
@@ -49,13 +56,44 @@ static void _print_usage(void)
 static void _print_interfaces(void)
 {
   pcap_if_t *it = NULL;
+  char buf4[INET_ADDRSTRLEN];
+  char buf6[INET6_ADDRSTRLEN];
 
   if(pcap_findalldevs(&it, errbuf) == 0)
   {
-    printf("Available interfaces:");
+    printf("Available interfaces:\n");
+    bool is_addressed;
     while (it)
     {
-      printf(" %s", it->name);
+      is_addressed = false;
+      for(pcap_addr_t *a=it->addresses; a!=NULL; a=a->next)
+      {
+        if(a->addr->sa_family == AF_INET)
+        {
+          if(!is_addressed)
+          {
+            printf(" %s", it->name);
+            is_addressed = true;
+          }
+          inet_ntop(AF_INET, &((struct sockaddr_in*)a->addr)->sin_addr, buf4, sizeof(buf4));
+          printf(" [%s]", buf4);
+        }
+        else if(a->addr->sa_family == AF_INET6)
+        {
+          if(!is_addressed)
+          {
+            printf(" %s", it->name);
+            is_addressed = true;
+          }
+          inet_ntop(AF_INET6, &((struct sockaddr_in6*)a->addr)->sin6_addr, buf6, sizeof(buf6));
+          printf(" [%s]", buf6);
+        }
+      }
+      if(is_addressed)
+      {
+        printf("\n");
+      }
+
       it = it->next;
     }
     printf("\n");
@@ -156,6 +194,104 @@ static inline void sprint_macaddr_hex(char *buffer, const u_char *macaddr)
     macaddr[4],
     macaddr[5]
   );
+}
+
+static void find_interface_addresses(app_data_t *app_data_ptr, char *interface_name)
+{
+  pcap_if_t *it = NULL;
+
+  if(pcap_findalldevs(&it, errbuf) == 0)
+  {
+    while (it)
+    {
+      if(0 != strcmp(it->name, interface_name))
+      {
+        it = it->next;
+        continue;
+      }
+
+      for(pcap_addr_t *a=it->addresses; a!=NULL; a=a->next)
+      {
+        if(a->addr->sa_family == AF_INET)
+        {
+          if(app_data_ptr->interface_v4_addresses == NULL)
+          {
+            app_data_ptr->interface_v4_addresses = malloc(sizeof(struct in_addr));
+          }
+          else
+          {
+            app_data_ptr->interface_v4_addresses = realloc(app_data_ptr->interface_v4_addresses, (app_data_ptr->interface_v4_addresses_count + 1) * sizeof(struct in_addr));
+          }
+
+          memcpy(
+            &app_data_ptr->interface_v4_addresses[app_data_ptr->interface_v4_addresses_count],
+            &((struct sockaddr_in*)a->addr)->sin_addr,
+            sizeof(struct in_addr)
+          );
+
+          app_data_ptr->interface_v4_addresses_count += 1;
+        }
+        else if(a->addr->sa_family == AF_INET6)
+        {
+          if(app_data_ptr->interface_v6_addresses == NULL)
+          {
+            app_data_ptr->interface_v6_addresses = malloc(sizeof(struct in6_addr));
+          }
+          else
+          {
+            app_data_ptr->interface_v6_addresses = realloc(app_data_ptr->interface_v6_addresses, (app_data_ptr->interface_v6_addresses_count + 1) * sizeof(struct in6_addr));
+          }
+
+          memcpy(
+            &app_data_ptr->interface_v6_addresses[app_data_ptr->interface_v6_addresses_count],
+            &((struct sockaddr_in6*)a->addr)->sin6_addr,
+            sizeof(struct in6_addr)
+          );
+
+          app_data_ptr->interface_v6_addresses_count += 1;
+        }
+      }
+      break;
+    }
+    pcap_freealldevs(it);
+
+    /* Produce string output */
+    app_data_ptr->interface_addresses_string = strdup("");
+    int32_t output_buffer_length = 0;
+
+    if(app_data_ptr->interface_v4_addresses_count > 0 || app_data_ptr->interface_v6_addresses_count > 0)
+    {
+      char address4_buffer[INET_ADDRSTRLEN];
+
+      for(int32_t i = 0; i < app_data_ptr->interface_v4_addresses_count; i++)
+      {
+        inet_ntop(AF_INET, &app_data_ptr->interface_v4_addresses[i], address4_buffer, sizeof(address4_buffer));
+
+        /* Allocate space for new port */
+        app_data_ptr->interface_addresses_string = realloc(app_data_ptr->interface_addresses_string, output_buffer_length + strlen(address4_buffer) + 3 + 1);
+
+        sprintf(&app_data_ptr->interface_addresses_string[output_buffer_length], " [%s]", address4_buffer);
+        output_buffer_length += strlen(address4_buffer) + 3;
+      }
+
+      char address6_buffer[INET6_ADDRSTRLEN];
+
+      for(int32_t i = 0; i < app_data_ptr->interface_v6_addresses_count; i++)
+      {
+        inet_ntop(AF_INET6, &app_data_ptr->interface_v6_addresses[i], address6_buffer, sizeof(address6_buffer));
+
+        /* Allocate space for new port */
+        app_data_ptr->interface_addresses_string = realloc(app_data_ptr->interface_addresses_string, output_buffer_length + strlen(address6_buffer) + 3 + 1);
+
+        sprintf(&app_data_ptr->interface_addresses_string[output_buffer_length], " [%s]", address6_buffer);
+        output_buffer_length += strlen(address6_buffer) + 3;
+      }
+    }
+  }
+  else
+  {
+    printf("error retrieving interfaces: %s\n", errbuf);
+  }
 }
 
 static void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet)
@@ -337,6 +473,17 @@ static void *notification_thread(void *arg)
         }
       }
 
+      /* Add footer */
+      email_line_length = asprintf(&email_line,
+        "\n"
+        "(Timestamps are in UTC, local host addresses: %s)\n",
+        app_data_ptr->interface_addresses_string
+      );
+      email_body = realloc(email_body, email_body_length + email_line_length);
+      memcpy(&email_body[email_body_length], email_line, email_line_length);
+      email_body_length += email_line_length;
+      free(email_line);
+
       /* Ensure null-termination */
       email_body = realloc(email_body, email_body_length + 1);
       email_body[email_body_length] = '\0';
@@ -450,6 +597,8 @@ int main(int argc, char *argv[])
     fprintf(stderr, "%s is not an Ethernet\n", app_data.config.listen_interface);
     return -1;
   }
+  find_interface_addresses(&app_data, app_data.config.listen_interface);
+  printf(" - successfully opened interface: %s %s\n", app_data.config.listen_interface, app_data.interface_addresses_string);
 
   if(pcap_compile(capture_pcap_ptr, &capture_filter, ports_filter_string, true, ipmask) == -1)
   {
