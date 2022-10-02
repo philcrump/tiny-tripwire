@@ -320,6 +320,11 @@ static void process_packet(u_char *args, const struct pcap_pkthdr *header, const
 
   incident_entry_t *incident_entry_ptr;
 
+  if(app_data.incident.active == false)
+  {
+    printf("New incident triggered.\n");
+  }
+
   /* Lock to avoid clashing with notification thread */
   pthread_mutex_lock(&app_data.incident.lock);
 
@@ -535,7 +540,8 @@ int main(int argc, char *argv[])
   signal(SIGINT, sigint_handler);
   signal(SIGTERM, sigint_handler);
 
-  printf("Tiny Tripwire");
+  printf("Tiny Tripwire\n");
+  fflush(stdout);
 
   static const struct option long_options[] = {
     { "config",  optional_argument, 0, 'c' },
@@ -567,6 +573,7 @@ int main(int argc, char *argv[])
     fprintf(stderr, "Failed to load config file \"%s\"\n", config_filename);
     return -1;
   }
+  printf(" - loaded config file: %s\n", config_filename);
 
   ports_filter_string = generate_ports_filter_string(&app_data.config);
   if(ports_filter_string == NULL)
@@ -591,10 +598,9 @@ int main(int argc, char *argv[])
     _print_interfaces();
     return -1;
   }
-
   if(pcap_datalink(capture_pcap_ptr) != DLT_EN10MB)
   {
-    fprintf(stderr, "%s is not an Ethernet\n", app_data.config.listen_interface);
+    fprintf(stderr, "%s is not an Ethernet Interface\n", app_data.config.listen_interface);
     return -1;
   }
   find_interface_addresses(&app_data, app_data.config.listen_interface);
@@ -605,17 +611,23 @@ int main(int argc, char *argv[])
     fprintf(stderr, "Couldn't parse filter: %s\n", pcap_geterr(capture_pcap_ptr));
     return -1;
   }
+  printf(" - successfully parsed filter.\n");
 
   if(pcap_setfilter(capture_pcap_ptr, &capture_filter) < 0)
   {
     fprintf(stderr, "Couldn't install filter: %s\n", pcap_geterr(capture_pcap_ptr));
     return -1;
   }
+  printf(" - successfully installed filter.\n");
 
   pthread_create(&notification_pthread, NULL, notification_thread, (void *)(&app_data));
 
+
+  printf("Running capture..\n");
   /* Blocking loop */
   pcap_loop(capture_pcap_ptr, 0, process_packet, NULL);
+
+  fprintf(stderr, "Capture aborted. Closing application..\n");
 
   pcap_freecode(&capture_filter);
   pcap_close(capture_pcap_ptr);
