@@ -268,7 +268,10 @@ static void *notification_thread(void *arg)
       char ipaddr_string[INET_ADDRSTRLEN];
       char macaddr_string[32];
 
-      email_body_length = asprintf(&email_body, "The following packets were picked up by Tiny Tripwire (Times are in UTC)\n\n");
+      email_body_length = asprintf(
+        &email_body,
+        "The following traffic was detected by Tiny Tripwire:\n\n"
+      );
 
       for(int32_t entry_index = 0; entry_index < incident_cache.entries_count; entry_index++)
       {
@@ -346,7 +349,7 @@ static void *notification_thread(void *arg)
         .message = email_body
       };
 
-      printf("Email sent:\n%s\n", email_body);
+      printf("Notification Email sent, %d incident entries.\n", incident_cache.entries_count);
 
       email(&(app_data.config), &email_notification);
 
