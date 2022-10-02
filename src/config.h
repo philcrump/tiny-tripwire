@@ -16,6 +16,7 @@ typedef struct {
   char *notification_email_source;
   char *notification_email_destination;
   char *notification_email_subject;
+  char *notification_ouilist_filename;
 
   bool smtp_enabled;
   bool smtp_server_usessl;

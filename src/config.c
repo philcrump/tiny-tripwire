@@ -89,6 +89,9 @@ bool load_config(char *config_filename, config_t *config_ptr)
 
     config_obj_ptr = json_object_object_get(config_notification_obj, "email_subject");
     config_ptr->notification_email_subject = strdup(json_object_get_string(config_obj_ptr));
+
+    config_obj_ptr = json_object_object_get(config_notification_obj, "ouilist_filename");
+    config_ptr->notification_ouilist_filename = strdup(json_object_get_string(config_obj_ptr));
   }
 
   struct json_object *config_email_obj;

@@ -9,7 +9,8 @@
 		"latency_seconds": 60,
 		"email_destination": "phil@abc.co.uk",
 		"email_source": "test@abc.co.uk",
-		"email_subject": "Tiny-Tripwire Incident Report"
+		"email_subject": "Tiny-Tripwire Incident Report",
+		"ouilist_filename": "manuf"
 	},
 	"smtp": {
 		"hostname": "smtp.servers.org",

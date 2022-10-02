@@ -5,6 +5,7 @@
 
 #include "config.h"
 #include "incident.h"
+#include "ouilist.h"
 
 typedef struct {
   bool exit_requested;
@@ -17,6 +18,8 @@ typedef struct {
   int32_t interface_v6_addresses_count;
 
   char *interface_addresses_string;
+
+  ouilist_t ouilist;
 
   incident_t incident;
 

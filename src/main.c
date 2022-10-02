@@ -17,6 +17,7 @@
 #include "main.h"
 #include "sniff.h"
 #include "email.h"
+#include "ouilist.h"
 #include "util/timing.h"
 
 #define CONFIG_FILENAME "config.json"
@@ -30,6 +31,10 @@ static app_data_t app_data = {
   .interface_v6_addresses_count = 0,
 
   .interface_addresses_string = NULL,
+
+  .ouilist = {
+    .loaded = false
+  },
 
   .incident = {
     .lock = PTHREAD_MUTEX_INITIALIZER,
@@ -101,7 +106,7 @@ static void _print_interfaces(void)
   }
   else
   {
-    printf("error retrieving interfaces: %s\n", errbuf);
+    fprintf(stderr, "error retrieving interfaces: %s\n", errbuf);
   }
   printf("\n");
 }
@@ -420,6 +425,7 @@ static void *notification_thread(void *arg)
       char entry_time_string[32];
       char ipaddr_string[INET_ADDRSTRLEN];
       char macaddr_string[32];
+      char oui_string[128];
 
       email_body_length = asprintf(
         &email_body,
@@ -437,44 +443,51 @@ static void *notification_thread(void *arg)
 
         sprint_macaddr_hex(macaddr_string, incident_cache_entry_ptr->src_mac);
 
+        oui_string[0] = '\0';
+        oui_lookup(&(app_data_ptr->ouilist), macaddr_string, oui_string, sizeof(oui_string));
+
         if(incident_cache_entry_ptr->ip_proto == IPPROTO_TCP)
         {
-          email_line_length = asprintf(&email_line, "* [%s] TCP, %s <%s>, Ports: %u -> %u [%s%s%s%s]\n",
+          email_line_length = asprintf(&email_line, "* [%s] TCP ports: %u -> %u [%s%s%s%s], %s <%s> (%s)\n",
             entry_time_string,
-            ipaddr_string,
-            macaddr_string,
             incident_cache_entry_ptr->src_port,
             incident_cache_entry_ptr->dst_port,
             (incident_cache_entry_ptr->tcp_th_flags & TH_SYN) ? "S" : "",
             (incident_cache_entry_ptr->tcp_th_flags & TH_ACK) ? "A" : "",
             (incident_cache_entry_ptr->tcp_th_flags & TH_FIN) ? "F" : "",
-            (incident_cache_entry_ptr->tcp_th_flags & TH_RST) ? "R" : ""
+            (incident_cache_entry_ptr->tcp_th_flags & TH_RST) ? "R" : "",
+            ipaddr_string,
+            macaddr_string,
+            oui_string
           );
         }
         else if(incident_cache_entry_ptr->ip_proto == IPPROTO_UDP)
         {
-          email_line_length = asprintf(&email_line, "* [%s] UDP, %s <%s>, Ports: %u -> %u\n",
+          email_line_length = asprintf(&email_line, "* [%s] UDP ports: %u -> %u, %s <%s> (%s)\n",
             entry_time_string,
+            incident_cache_entry_ptr->src_port,
+            incident_cache_entry_ptr->dst_port,
             ipaddr_string,
             macaddr_string,
-            incident_cache_entry_ptr->src_port,
-            incident_cache_entry_ptr->dst_port
+            oui_string
           );
         }
         else if(incident_cache_entry_ptr->ip_proto == IPPROTO_ICMP)
         {
-          email_line_length = asprintf(&email_line, "* [%s] ICMP, %s <%s>\n",
+          email_line_length = asprintf(&email_line, "* [%s] ICMP, %s <%s> (%s)\n",
             entry_time_string,
             ipaddr_string,
-            macaddr_string
+            macaddr_string,
+            oui_string
           );
         }
         else
         {
-          email_line_length = asprintf(&email_line, "* [%s] ???, %s <%s>\n",
+          email_line_length = asprintf(&email_line, "* [%s] ???, %s <%s> (%s)\n",
             entry_time_string,
             ipaddr_string,
-            macaddr_string
+            macaddr_string,
+            oui_string
           );
         }
 
@@ -586,6 +599,21 @@ int main(int argc, char *argv[])
     return -1;
   }
   printf(" - loaded config file: %s\n", config_filename);
+  fflush(stdout);
+
+
+  if(app_data.config.notification_ouilist_filename != NULL && strlen(app_data.config.notification_ouilist_filename) > 0)
+  {
+    if(oui_loadfile(&(app_data.ouilist), app_data.config.notification_ouilist_filename))
+    {
+      printf(" - successfully loaded %d entries in OUI list.\n", app_data.ouilist.entries_count);
+    }
+    else
+    {
+      fprintf(stderr, " - warning: failed to load OUI list from \"%s\"\n", app_data.config.notification_ouilist_filename);
+    }
+  }
+  fflush(stdout);
 
   ports_filter_string = generate_ports_filter_string(&app_data.config);
   if(ports_filter_string == NULL)
@@ -617,6 +645,7 @@ int main(int argc, char *argv[])
   }
   find_interface_addresses(&app_data, app_data.config.listen_interface);
   printf(" - successfully opened interface: %s %s\n", app_data.config.listen_interface, app_data.interface_addresses_string);
+  fflush(stdout);
 
   if(pcap_compile(capture_pcap_ptr, &capture_filter, ports_filter_string, true, ipmask) == -1)
   {
@@ -624,6 +653,7 @@ int main(int argc, char *argv[])
     return -1;
   }
   printf(" - successfully parsed filter.\n");
+  fflush(stdout);
 
   if(pcap_setfilter(capture_pcap_ptr, &capture_filter) < 0)
   {
@@ -631,11 +661,14 @@ int main(int argc, char *argv[])
     return -1;
   }
   printf(" - successfully installed filter.\n");
+  fflush(stdout);
 
   pthread_create(&notification_pthread, NULL, notification_thread, (void *)(&app_data));
 
 
   printf("Running capture..\n");
+  fflush(stdout);
+
   /* Blocking loop */
   pcap_loop(capture_pcap_ptr, 0, process_packet, NULL);
 

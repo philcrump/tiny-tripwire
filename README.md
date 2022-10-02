@@ -20,6 +20,17 @@ A minimal IDS. Uses libpcap to monitor an interface on specific ports, all event
 sudo apt install build-essential libpcap-dev libcurl4-openssl-dev libjson-c-dev
 ```
 
+### OUI MAC Address List
+
+An OUI MAC Address list can be used to look up the manufacturer name listed against the MAC Address detected.
+
+The latest list from the wireshark project can be downloaded to this directory with the following command:
+```bash
+curl -o manuf 'https://gitlab.com/wireshark/wireshark/-/raw/master/manuf'
+```
+
+The filename is configured in *config.json*. Failure to load the list is not a fatal error, setting the filename to "" will disable the lookup.
+
 ## Compilation
 
 `make`
@@ -41,7 +52,8 @@ eg.
 		"latency_seconds": 60,
 		"email_destination": "phil@abc.co.uk",
 		"email_source": "test@abc.co.uk",
-		"email_subject": "Tiny-Tripwire Incident Report"
+		"email_subject": "Tiny-Tripwire Incident Report",
+		"ouilist_filename": "manuf"
 	},
 	"smtp": {
 		"hostname": "smtp.mailgun.org",

@@ -6,7 +6,9 @@ LDFLAGS := -lm -lrt -pthread -lpcap -lcurl -ljson-c
 C_SRCS := src/main.c \
 			src/config.c \
 			src/email.c \
-			src/util/timing.c
+			src/ouilist.c \
+			src/util/timing.c \
+			src/util/bsearch64.c
 
 OBJS := ${C_SRCS:.c=.o}
 DEPS := ${C_SRCS:.c=.d}

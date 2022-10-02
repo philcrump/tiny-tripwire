@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include <netinet/in.h>
+
 #include "sniff.h"
 
 typedef struct {
