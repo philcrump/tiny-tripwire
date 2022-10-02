@@ -151,7 +151,7 @@ bool email(config_t *config_ptr, email_t *email_ptr)
     curl_easy_setopt(curl, CURLOPT_READDATA, &upload_ctx);
     curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
  
-    curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+    //curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
  
     /* Send the message */
     res = curl_easy_perform(curl);
