@@ -108,9 +108,9 @@ static inline char *generate_ports_filter_string(config_t *config_ptr)
     /* Multiple ports */
     /* example output: "port (80 or 443)" */
 
-    filter_init = (config_ptr->listen_icmp ? "icmp or port'(" : "port'(");
-
     uint32_t filter_string_length;
+
+    filter_init = (config_ptr->listen_icmp ? "icmp or port (" : "port (");
 
     filter_string_length = strlen(filter_init);
 
