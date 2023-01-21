@@ -10,6 +10,7 @@ A minimal IDS. Uses libpcap to monitor an interface on specific ports, all event
 
 - [ ] Non-root user ability (or at self-demoting after libpcap setup)
 - [ ] Support for the "any" Interface
+- [ ] Handling of detected packets with IP extension headers
 
 ## Dependencies
 
