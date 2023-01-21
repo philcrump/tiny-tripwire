@@ -10,7 +10,8 @@
 
 typedef struct {
   uint64_t timestamp_ms;
-  struct in_addr src_addr;
+  uint8_t ip_version; // 4 or 6
+  void *src_addr_ptr; // either (struct in_addr) or (struct in_addr6) depending on ip_version
   uint8_t src_mac[ETHER_ADDR_LEN];
   uint8_t ip_proto;
   uint16_t src_port; // TCP

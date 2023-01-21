@@ -307,32 +307,65 @@ static void process_packet(u_char *args, const struct pcap_pkthdr *header, const
   /* Pointers to header structs */
   struct sniff_ethernet *ethernet;
   struct sniff_ip *ip;
+  struct sniff_ip4 *ip4 = NULL;
+  struct sniff_ip6 *ip6 = NULL;
   struct sniff_tcp *tcp;
   struct sniff_udp *udp;
 
+  uint8_t ip_version;
   int size_ip;
   int size_tcp;
 
   ethernet = (struct sniff_ethernet*)(packet);
 
+  /* Find the IP version */
   ip = (struct sniff_ip*)(packet + SIZE_ETHERNET);
-  size_ip = IP_HL(ip)*4;
-  if(size_ip < 20)
+  ip_version = ((ip->ip_v_ & 0xF0) >> 4);
+  if(ip_version == 4)
   {
-    /* Invalid IP header length */
-    return;
-  }
+    /* IPv4 */
+    ip4 = (struct sniff_ip4*)(packet + SIZE_ETHERNET);
+    size_ip = IP_HL(ip4)*4;
 
-  if(app_data.config.listen_ignore_local_source)
-  {
-    for(int32_t i = 0; i < app_data.interface_v4_addresses_count; i++)
+    if(size_ip < 20)
     {
-      if(0 == memcmp(&ip->ip_src, &(app_data.interface_v4_addresses[i]), sizeof(struct in_addr)))
+      /* Invalid IP header length */
+      return;
+    }
+
+    if(app_data.config.listen_ignore_local_source)
+    {
+      for(int32_t i = 0; i < app_data.interface_v4_addresses_count; i++)
       {
-        return;
+        if(0 == memcmp(&ip4->ip_src, &(app_data.interface_v4_addresses[i]), sizeof(struct in_addr)))
+        {
+          return;
+        }
       }
     }
-    /* IPv6 not yet supported */
+  }
+  else if(ip_version == 6)
+  {
+    /* IPv6 */
+    ip6 = (struct sniff_ip6*)(packet + SIZE_ETHERNET);
+    size_ip = sizeof(struct sniff_ip6);
+
+    if(app_data.config.listen_ignore_local_source)
+    {
+      for(int32_t i = 0; i < app_data.interface_v6_addresses_count; i++)
+      {
+        if(0 == memcmp(&ip6->ip_src, &(app_data.interface_v6_addresses[i]), sizeof(struct in6_addr)))
+        {
+          return;
+        }
+      }
+      /* IPv6 not yet supported */
+    }
+  }
+  else
+  {
+    printf("Unknown IP version (%d), aborting.\n", ip_version);
+    return;
   }
 
   incident_entry_t *incident_entry_ptr;
@@ -364,11 +397,30 @@ static void process_packet(u_char *args, const struct pcap_pkthdr *header, const
   incident_entry_ptr = &(app_data.incident.entries[app_data.incident.entries_count - 1]);
 
   incident_entry_ptr->timestamp_ms = timestamp_ms();
-  memcpy(&(incident_entry_ptr->src_addr), &(ip->ip_src), sizeof(struct in_addr));
+  if(ip_version == 4)
+  {
+    incident_entry_ptr->ip_version = 4;
+    incident_entry_ptr->src_addr_ptr = (void *)malloc(sizeof(struct in_addr));
+    memcpy(incident_entry_ptr->src_addr_ptr, &(ip4->ip_src), sizeof(struct in_addr));
+  }
+  else if(ip_version == 6)
+  {
+    incident_entry_ptr->ip_version = 6;
+    incident_entry_ptr->src_addr_ptr = (void *)malloc(sizeof(struct in6_addr));
+    memcpy(incident_entry_ptr->src_addr_ptr, &(ip6->ip_src), sizeof(struct in6_addr));
+  }
   memcpy(&(incident_entry_ptr->src_mac), &(ethernet->ether_shost), sizeof(u_char) * ETHER_ADDR_LEN);
-  incident_entry_ptr->ip_proto = ip->ip_p;
 
-  if(ip->ip_p == IPPROTO_TCP)
+  if(ip_version == 4)
+  {
+    incident_entry_ptr->ip_proto = ip4->ip_p;
+  }
+  else if(ip_version == 6)
+  {
+    incident_entry_ptr->ip_proto = ip6->ip_nh;
+  }
+
+  if(incident_entry_ptr->ip_proto == IPPROTO_TCP)
   {
     tcp = (struct sniff_tcp*)(packet + SIZE_ETHERNET + size_ip);
     size_tcp = TH_OFF(tcp)*4;
@@ -381,7 +433,7 @@ static void process_packet(u_char *args, const struct pcap_pkthdr *header, const
       incident_entry_ptr->tcp_th_flags = tcp->th_flags;
     }
   }
-  else if(ip->ip_p == IPPROTO_UDP)
+  else if(incident_entry_ptr->ip_proto == IPPROTO_UDP)
   {
     udp = (struct sniff_udp*)(packet + SIZE_ETHERNET + size_ip);
     incident_entry_ptr->src_port = ntohs(udp->uh_sport);
@@ -423,7 +475,7 @@ static void *notification_thread(void *arg)
 
       time_t entry_time;
       char entry_time_string[32];
-      char ipaddr_string[INET_ADDRSTRLEN];
+      char ipaddr_string[INET6_ADDRSTRLEN];
       char macaddr_string[32];
       char oui_string[128];
 
@@ -439,7 +491,14 @@ static void *notification_thread(void *arg)
         entry_time = (time_t)(incident_cache_entry_ptr->timestamp_ms / 1000);
         strftime(entry_time_string, 31, "%Y-%m-%d %H:%M:%S", gmtime(&entry_time));
 
-        inet_ntop(AF_INET, &(incident_cache_entry_ptr->src_addr), ipaddr_string, INET_ADDRSTRLEN);
+        if(incident_cache_entry_ptr->ip_version == 4)
+        {
+          inet_ntop(AF_INET, incident_cache_entry_ptr->src_addr_ptr, ipaddr_string, INET_ADDRSTRLEN);
+        }
+        else if(incident_cache_entry_ptr->ip_version == 6)
+        {
+          inet_ntop(AF_INET6, incident_cache_entry_ptr->src_addr_ptr, ipaddr_string, INET6_ADDRSTRLEN);
+        }
 
         sprint_macaddr_hex(macaddr_string, incident_cache_entry_ptr->src_mac);
 

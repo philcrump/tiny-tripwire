@@ -28,8 +28,13 @@ struct sniff_ethernet {
         u_short ether_type;                     /* IP? ARP? RARP? etc */
 };
 
-/* IP header */
+/* Unknown version IP header */
 struct sniff_ip {
+        u_char  ip_v_;                 /* version << 4 */
+};
+
+/* IPv4 header */
+struct sniff_ip4 {
         u_char  ip_vhl;                 /* version << 4 | header length >> 2 */
         u_char  ip_tos;                 /* type of service */
         u_short ip_len;                 /* total length */
@@ -46,6 +51,21 @@ struct sniff_ip {
 };
 #define IP_HL(ip)               (((ip)->ip_vhl) & 0x0f)
 #define IP_V(ip)                (((ip)->ip_vhl) >> 4)
+
+/* IPv6 header */
+struct sniff_ip6 {
+        u_char  ip_vtcl;                /* version << 4 | Traffic Class >> 4 */
+        u_char  ip_tclfll;              /* Traffic Class << 4 | Flow Label >> 4 */
+        u_short ip_fll;                 /* Flow Label */
+
+        u_short ip_plen;                /* Paylod Length */
+        u_char  ip_nh;                  /* Next Header */
+        u_char  ip_hl;                  /* Hop Limit */
+
+        struct in6_addr ip_src;         /* Source Address */
+
+        struct in6_addr ip_dest;        /* Destination Address */
+};
 
 /* TCP header */
 typedef u_int tcp_seq;

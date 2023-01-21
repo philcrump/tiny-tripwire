@@ -4,11 +4,10 @@
   <img src="/logo-Lorc_Delapoite_contributors.png" width="25%" />
 </p>
 
-A minimal IDS. Uses libpcap to monitor an interface on specific ports, all events are logged and will trigger an email notification with a summary of all events after a configurable latency.
+A minimal IDS. Uses libpcap to monitor an interface on specific ports, all events are logged and will trigger an email notification with a summary of all events after a configurable latency. Supports IPv4 & IPv6.
 
 ## Notable missing features
 
-- [ ] IPv6 Support
 - [ ] Non-root user ability (or at self-demoting after libpcap setup)
 - [ ] Support for the "any" Interface
 
