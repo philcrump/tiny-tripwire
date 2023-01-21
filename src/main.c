@@ -313,6 +313,7 @@ static void process_packet(u_char *args, const struct pcap_pkthdr *header, const
   struct sniff_udp *udp;
 
   uint8_t ip_version;
+  uint16_t ip_protocol;
   int size_ip;
   int size_tcp;
 
@@ -343,6 +344,8 @@ static void process_packet(u_char *args, const struct pcap_pkthdr *header, const
         }
       }
     }
+
+    ip_protocol = ip4->ip_p;
   }
   else if(ip_version == 6)
   {
@@ -359,12 +362,22 @@ static void process_packet(u_char *args, const struct pcap_pkthdr *header, const
           return;
         }
       }
-      /* IPv6 not yet supported */
     }
+
+    ip_protocol = ip6->ip_nh;
   }
   else
   {
     printf("Unknown IP version (%d), aborting.\n", ip_version);
+    return;
+  }
+
+  /* Filter protocol. TODO: Handle extension headers, currently will cause drop here. */
+  if(ip_protocol != IPPROTO_TCP
+    && ip_protocol != IPPROTO_UDP
+    && ip_protocol != IPPROTO_ICMP)
+  {
+    printf("Unknown IP Protocol (%d), aborting.\n", ip_protocol);
     return;
   }
 
@@ -411,14 +424,7 @@ static void process_packet(u_char *args, const struct pcap_pkthdr *header, const
   }
   memcpy(&(incident_entry_ptr->src_mac), &(ethernet->ether_shost), sizeof(u_char) * ETHER_ADDR_LEN);
 
-  if(ip_version == 4)
-  {
-    incident_entry_ptr->ip_proto = ip4->ip_p;
-  }
-  else if(ip_version == 6)
-  {
-    incident_entry_ptr->ip_proto = ip6->ip_nh;
-  }
+  incident_entry_ptr->ip_proto = ip_protocol;
 
   if(incident_entry_ptr->ip_proto == IPPROTO_TCP)
   {
@@ -438,6 +444,10 @@ static void process_packet(u_char *args, const struct pcap_pkthdr *header, const
     udp = (struct sniff_udp*)(packet + SIZE_ETHERNET + size_ip);
     incident_entry_ptr->src_port = ntohs(udp->uh_sport);
     incident_entry_ptr->dst_port = ntohs(udp->uh_dport);
+  }
+  else if(incident_entry_ptr->ip_proto == IPPROTO_ICMP)
+  {
+    /* No further information */
   }
 
   pthread_mutex_unlock(&app_data.incident.lock);
