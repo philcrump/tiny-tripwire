@@ -506,7 +506,7 @@ static void *notification_thread(void *arg)
       /* Add footer */
       email_line_length = asprintf(&email_line,
         "\n"
-        "(Timestamps are in UTC, local host addresses: %s)\n",
+        "(Timestamps are in UTC, local addresses on this host: %s)\n",
         app_data_ptr->interface_addresses_string
       );
       email_body = realloc(email_body, email_body_length + email_line_length);
@@ -526,7 +526,7 @@ static void *notification_thread(void *arg)
         .message = email_body
       };
 
-      printf("Notification Email sent, %d incident entries.\n", incident_cache.entries_count);
+      printf("Sending Notification Email, %d incident entries.\n", incident_cache.entries_count);
 
       email(&(app_data.config), &email_notification);
 
