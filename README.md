@@ -46,7 +46,8 @@ eg.
 		"interface": "enp0s31f6",
 		"icmp": true,
 		"ports": [ 21, 22, 80, 443 ],
-		"ignore_local_source": true
+		"ignore_local_source": true,
+		"filter_local_destination": false
 	},
 	"notification": {
 		"latency_seconds": 60,
