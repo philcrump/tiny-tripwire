@@ -1,5 +1,5 @@
 CC := gcc
-COPT := -O2 -march=core-avx2
+COPT := -O2 -march=core-avx2 -D_FORTIFY_SOURCE=3 -fstack-protector-strong
 CFLAGS := -Wall -Wextra -Wpedantic -Wunused -std=gnu11 -D_GNU_SOURCE -ggdb
 LDFLAGS := -lm -lrt -pthread -lpcap -lcurl -ljson-c
 
