@@ -5,7 +5,6 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
-#include <uuid/uuid.h>
 
 #include <json-c/json.h>
 
