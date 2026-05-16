@@ -271,3 +271,23 @@ bool oui_lookup(ouilist_t *ouilist_ptr, char *target_macaddr, char *response_buf
   snprintf(response_buffer, response_buffer_length, "%s", item_ptr->name_string);
   return true;
 }
+
+void oui_destroylist(ouilist_t *ouilist_ptr)
+{
+  ouilist_entry_t *entry_ptr;
+
+  for(int32_t i = 0; i < ouilist_ptr->entries_count; i++)
+  {
+    entry_ptr = &ouilist_ptr->entries[i];
+
+    if(entry_ptr->macaddr_string != NULL)
+    {
+      free(entry_ptr->macaddr_string);
+    }
+
+    if(entry_ptr->name_string != NULL)
+    {
+      free(entry_ptr->name_string);
+    }
+  }
+}

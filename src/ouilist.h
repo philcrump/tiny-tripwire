@@ -21,4 +21,6 @@ bool oui_loadfile(ouilist_t *ouilist_ptr, char *ouilist_filename);
 
 bool oui_lookup(ouilist_t *ouilist_ptr, char *target_macaddr, char *response_buffer, int32_t response_buffer_length);
 
+void oui_destroylist(ouilist_t *ouilist_ptr);
+
 #endif /* __OUILIST_H__ */

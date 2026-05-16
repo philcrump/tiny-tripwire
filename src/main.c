@@ -125,6 +125,7 @@ static inline char *generate_ports_filter_string(config_t *config_ptr)
 {
   int32_t ports_count = 0;
   char *filter_string = NULL;
+  char *filter_string_increased = NULL;
   char *filter_init;
 
   while(config_ptr->listen_ports[ports_count] != 0)
@@ -171,7 +172,13 @@ static inline char *generate_ports_filter_string(config_t *config_ptr)
       }
 
       /* Allocate space for new port */
-      filter_string = realloc(filter_string, filter_string_length + strlen(port_string) + 4 + 1);
+      filter_string_increased = realloc(filter_string, filter_string_length + strlen(port_string) + 4 + 1);
+      if(filter_string_increased == NULL)
+      {
+        free(filter_string);
+        return NULL;
+      }
+      filter_string = filter_string_increased;
 
       sprintf(&filter_string[filter_string_length], "%s or ", port_string);
       filter_string_length += strlen(port_string) + 4;
@@ -701,6 +708,7 @@ int main(int argc, char *argv[])
   }
   printf(" - loaded config file: %s\n", config_filename);
   fflush(stdout);
+  free(config_filename);
 
 
   if(app_data.config.notification_ouilist_filename != NULL && strlen(app_data.config.notification_ouilist_filename) > 0)
@@ -737,11 +745,13 @@ int main(int argc, char *argv[])
   {
     fprintf(stderr, "Couldn't open device %s: %s\n", app_data.config.listen_interface, errbuf);
     _print_interfaces();
+    free(ports_filter_string);
     return -1;
   }
   if(pcap_datalink(capture_pcap_ptr) != DLT_EN10MB)
   {
     fprintf(stderr, "%s is not an Ethernet Interface\n", app_data.config.listen_interface);
+    free(ports_filter_string);
     return -1;
   }
   find_interface_addresses(&app_data, app_data.config.listen_interface);
@@ -751,10 +761,12 @@ int main(int argc, char *argv[])
   if(pcap_compile(capture_pcap_ptr, &capture_filter, ports_filter_string, true, ipmask) == -1)
   {
     fprintf(stderr, "Couldn't parse filter: %s\n", pcap_geterr(capture_pcap_ptr));
+    free(ports_filter_string);
     return -1;
   }
   printf(" - successfully parsed filter.\n");
   fflush(stdout);
+  free(ports_filter_string);
 
   if(pcap_setfilter(capture_pcap_ptr, &capture_filter) < 0)
   {
@@ -778,8 +790,7 @@ int main(int argc, char *argv[])
   pcap_freecode(&capture_filter);
   pcap_close(capture_pcap_ptr);
 
-  free(ports_filter_string);
-  free(config_filename);
+  oui_destroylist(&(app_data.ouilist));
 
   return 0;
 }
