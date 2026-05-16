@@ -11,6 +11,7 @@ typedef struct {
   bool listen_icmp;
   int32_t listen_ports[CONFIG_LISTEN_PORTS_MAXCOUNT+1];
   bool listen_ignore_local_source;
+  bool listen_filter_local_destination;
 
   int32_t notification_latency_s;
   char *notification_email_source;

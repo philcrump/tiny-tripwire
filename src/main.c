@@ -345,6 +345,22 @@ static void process_packet(u_char *args, const struct pcap_pkthdr *header, const
       }
     }
 
+    if(app_data.config.listen_filter_local_destination)
+    {
+      bool local_destination = false;
+      for(int32_t i = 0; i < app_data.interface_v4_addresses_count; i++)
+      {
+        if(0 == memcmp(&ip4->ip_dst, &(app_data.interface_v4_addresses[i]), sizeof(struct in_addr)))
+        {
+          local_destination = true;
+        }
+      }
+      if(local_destination == false)
+      {
+        return;
+      }
+    }
+
     ip_protocol = ip4->ip_p;
   }
   else if(ip_version == 6)
@@ -361,6 +377,22 @@ static void process_packet(u_char *args, const struct pcap_pkthdr *header, const
         {
           return;
         }
+      }
+    }
+
+    if(app_data.config.listen_filter_local_destination)
+    {
+      bool local_destination = false;
+      for(int32_t i = 0; i < app_data.interface_v6_addresses_count; i++)
+      {
+        if(0 == memcmp(&ip6->ip_dest, &(app_data.interface_v6_addresses[i]), sizeof(struct in6_addr)))
+        {
+          local_destination = true;
+        }
+      }
+      if(local_destination == false)
+      {
+        return;
       }
     }
 

@@ -67,6 +67,9 @@ bool load_config(char *config_filename, config_t *config_ptr)
 
     config_obj_ptr = json_object_object_get(config_listen_obj, "ignore_local_source");
     config_ptr->listen_ignore_local_source = json_object_get_boolean(config_obj_ptr);
+
+    config_obj_ptr = json_object_object_get(config_listen_obj, "filter_local_destination");
+    config_ptr->listen_filter_local_destination = json_object_get_boolean(config_obj_ptr);
   }
   else
   {
