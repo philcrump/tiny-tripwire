@@ -686,7 +686,7 @@ int main(int argc, char *argv[])
     switch(c)
     {
       case 'c': /* --config <filename> */
-        config_filename = optarg;
+        config_filename = strdup(optarg);
         break;
       
       case '?':
